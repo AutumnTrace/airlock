@@ -69,8 +69,9 @@ type RedactCfg struct {
 
 // PatternCfg is one custom redaction pattern.
 type PatternCfg struct {
-	Name  string `toml:"name"`
-	Regex string `toml:"regex"`
+	Name  string   `toml:"name"`
+	Regex string   `toml:"regex"`
+	Hints []string `toml:"hints"` // optional literals every match contains; makes the pattern cheap
 }
 
 // Policy is a parsed, checked policy.

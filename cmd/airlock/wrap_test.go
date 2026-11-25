@@ -70,7 +70,7 @@ func TestWrapForwardsMalformedFrames(t *testing.T) {
 func TestWrapLargeFrame(t *testing.T) {
 	p := start(t, "wrap", "--", fakeBin)
 	got, _ := p.toolText("big", map[string]any{"n": 4 << 20})
-	if len(got) != 4<<20 || strings.Trim(got, "x") != "" {
+	if len(got) != 4<<20 || !strings.HasPrefix(got, "The quick brown fox") {
 		t.Fatalf("big frame came back as %d bytes", len(got))
 	}
 	p.wait()

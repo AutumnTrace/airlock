@@ -190,7 +190,7 @@ func TestNormPath(t *testing.T) {
 }
 
 func TestRedactor(t *testing.T) {
-	r, err := NewRedactor(true, []PatternCfg{{"hostname", `\b[a-z]+\.corp\.example\b`}})
+	r, err := NewRedactor(true, []PatternCfg{{Name: "hostname", Regex: `\b[a-z]+\.corp\.example\b`}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,5 +223,53 @@ func TestRedactor(t *testing.T) {
 	b, _ := json.Marshal(map[string]string{"text": "key:\n" + pem})
 	if out, counts, _ := r.JSON(b); strings.Contains(string(out), "b3Blbn") || counts["private-key"] != 1 {
 		t.Fatalf("PEM block: %s", out)
+	}
+}
+
+// Every built-in pattern must be found through its hints, at the start, in
+// the middle and at the end of a frame.
+func TestBuiltinHintsCoverTheirPatterns(t *testing.T) {
+	r, _ := NewRedactor(true, nil)
+	samples := map[string]string{
+		"private-key":       "-----BEGIN RSA PRIVATE KEY-----\nMIIEow==\n-----END RSA PRIVATE KEY-----",
+		"aws-access-key-id": "ASIAIOSFODNN7EXAMPLE",
+		"github-token":      "github_pat_" + strings.Repeat("a1", 31),
+		"anthropic-api-key": "sk-ant-api03-" + strings.Repeat("Ab3", 10),
+		"openai-api-key":    "sk-proj-" + strings.Repeat("Zx9", 12),
+		"slack-token":       "xoxb-1234567890-abcdef",
+		"stripe-secret-key": "sk_live_" + strings.Repeat("4eC3", 6),
+		"google-api-key":    "AIza" + strings.Repeat("S", 35),
+		"jwt":               "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+	}
+	for name, secret := range samples {
+		for _, frame := range []string{secret + ` tail`, `{"a":"x ` + secret + ` y"}`, `head ` + secret} {
+			b, _ := json.Marshal(map[string]string{"text": frame})
+			if !r.candidate(b) {
+				t.Errorf("%s: no hint found in %s", name, b)
+				continue
+			}
+			_, counts, _ := r.JSON(b)
+			if counts[name] == 0 {
+				t.Errorf("%s: not redacted in %s (counts %v)", name, b, counts)
+			}
+		}
+	}
+}
+
+func TestCustomPatternHints(t *testing.T) {
+	p := mustParse(t, `
+[redact]
+builtin = false
+[[redact.pattern]]
+name = "ticket"
+regex = 'TKT-[0-9]{6}'
+hints = ["TKT-"]
+`)
+	out, counts, _ := p.Redactor.JSON([]byte(`{"t":"see TKT-123456"}`))
+	if counts["ticket"] != 1 || strings.Contains(string(out), "123456") {
+		t.Fatalf("%s %v", out, counts)
+	}
+	if p.Redactor.candidate([]byte(`{"t":"nothing here at all"}`)) {
+		t.Fatal("hinted custom pattern should skip clean frames without a regex run")
 	}
 }
