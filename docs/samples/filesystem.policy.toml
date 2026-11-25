@@ -1,0 +1,38 @@
+# Policy used to record docs/samples/filesystem.jsonl.
+default = "deny"
+
+[pinning]
+lockfile = "filesystem.lock.json"
+on_drift = "block"
+on_suspicious = "block"
+
+[schema]
+validate = true
+
+[[rule]]
+tools = ["read_text_file", "read_media_file", "read_multiple_files", "list_directory",
+         "list_directory_with_sizes", "directory_tree", "search_files", "get_file_info"]
+action = "allow"
+args.path.prefix = ["C:/airlock-demo/workspace"]
+args.paths.prefix = ["C:/airlock-demo/workspace"]
+
+[[rule]]
+tools = ["list_allowed_directories"]
+action = "allow"
+
+[[rule]]
+tools = ["write_file", "edit_file", "create_directory"]
+action = "allow"
+rate = "3/min"
+  [rule.args.path]
+  prefix = ["C:/airlock-demo/workspace/src", "C:/airlock-demo/workspace/docs"]
+  not_regex = '(^|/)\.env'
+
+[[rule]]
+tools = ["move_file", "copy_file"]
+action = "deny"
+reason = "ask the user to move or copy files"
+
+[[redact.pattern]]
+name = "aws-secret-access-key"
+regex = '(?i)aws_secret_access_key\s*=\s*\S+'

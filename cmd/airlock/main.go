@@ -29,6 +29,7 @@ Usage:
   airlock verify [flags] <session.jsonl>...
   airlock keygen [-o airlock.key]
   airlock check <policy.toml> [tool [arguments-json]]
+  airlock view [session.jsonl | directory]...
   airlock version
 
 Run "airlock <command> -h" for the flags of a command.
@@ -52,6 +53,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return cmdKeygen(args[1:], stdout, stderr)
 	case "check":
 		return cmdCheck(args[1:], stdout, stderr)
+	case "view":
+		return cmdView(args[1:], stdout, stderr)
 	case "version", "--version", "-v":
 		fmt.Fprintln(stdout, "airlock", buildVersion())
 		return 0

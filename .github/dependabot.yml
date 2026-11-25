@@ -8,6 +8,14 @@ updates:
       gomod:
         patterns: ['*']
 
+  - package-ecosystem: gomod
+    directory: /demo
+    schedule:
+      interval: monthly
+    groups:
+      demo:
+        patterns: ['*']
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

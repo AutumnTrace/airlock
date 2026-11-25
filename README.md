@@ -9,7 +9,10 @@ go install github.com/AutumnTrace/airlock/cmd/airlock@latest
 airlock check examples/policies/filesystem.toml read_text_file '{"path":"/etc/passwd"}'
 airlock wrap --policy examples/policies/filesystem.toml -- npx -y @modelcontextprotocol/server-filesystem /home/me/projects/site
 airlock verify ~/.airlock/logs/*.jsonl
+airlock view                 # timeline of the logged sessions in your browser
 ```
+
+The viewer is also published with two recorded sample sessions, a filesystem server under a deny-by-default policy and a rug pull being caught: https://autumntrace.github.io/airlock/
 
 `examples/rugpull` is a deliberately malicious server that swaps its tool description after the first call. Try it with `examples/policies/weather.toml`.
 
