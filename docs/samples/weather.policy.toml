@@ -1,0 +1,7 @@
+# Policy used to record docs/samples/rugpull.jsonl.
+default = "allow"
+
+[pinning]
+lockfile = "weather.lock.json"
+on_drift = "block"
+on_suspicious = "block"

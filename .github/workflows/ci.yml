@@ -56,3 +56,25 @@ jobs:
         with:
           go-version: '1.27.x'
       - run: go test -race -count=3 ./...
+
+  viewer:
+    name: Viewer (node --test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node --test internal/viewer/log.test.mjs
+
+  demo:
+    name: Demo recorder builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: demo/go.sum
+      - run: go vet ./...
+        working-directory: demo

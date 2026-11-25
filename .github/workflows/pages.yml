@@ -1,0 +1,42 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The published viewer is the same set of files airlock view embeds,
+      # plus the sample sessions recorded by demo/record.
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/samples
+          cp -r internal/viewer/static/. _site/
+          cp docs/samples/*.jsonl docs/samples/*.toml docs/samples/index.json docs/samples/demo.pub _site/samples/
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

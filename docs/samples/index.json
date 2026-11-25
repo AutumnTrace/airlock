@@ -1,0 +1,6 @@
+{
+  "samples": [
+    { "name": "rugpull.jsonl", "file": "rugpull.jsonl", "title": "Rug pull: a weather tool rewrites itself after the first call" },
+    { "name": "filesystem.jsonl", "file": "filesystem.jsonl", "title": "server-filesystem under a deny-by-default policy" }
+  ]
+}
