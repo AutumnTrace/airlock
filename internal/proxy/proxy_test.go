@@ -4,23 +4,31 @@ import (
 	"bufio"
 	"io"
 	"strings"
+	"sync"
 	"testing"
 )
 
 // upper is a handler that answers "ping" itself and upper-cases everything
-// the server says.
-type upper struct{ stderr []string }
+// the server says. Its methods run on different goroutines, as in airlock.
+type upper struct {
+	mu     sync.Mutex
+	stderr []string
+}
 
-func (upper) FromClient(f []byte) Action {
+func (*upper) FromClient(f []byte) Action {
 	if string(f) == "ping" {
 		return Action{Reply: [][]byte{[]byte("pong")}}
 	}
 	return Pass(f)
 }
-func (upper) FromServer(f []byte) Action {
+func (*upper) FromServer(f []byte) Action {
 	return Pass([]byte(strings.ToUpper(string(f))))
 }
-func (u *upper) Stderr(l []byte) { u.stderr = append(u.stderr, string(l)) }
+func (u *upper) Stderr(l []byte) {
+	u.mu.Lock()
+	u.stderr = append(u.stderr, string(l))
+	u.mu.Unlock()
+}
 
 func TestRunRoutesActions(t *testing.T) {
 	clientR, clientW := io.Pipe() // client -> proxy
