@@ -34,6 +34,7 @@ var (
 	out     = flag.String("out", "../docs/samples", "where to write the session logs")
 	fsPkg   = flag.String("fs-server", "@modelcontextprotocol/server-filesystem@2.4.0", "npm package of the filesystem server")
 	repoDir = flag.String("repo", "..", "airlock repository root")
+	version = flag.String("version", "0.1.0", "version stamped into the airlock binary, and so into the logs")
 )
 
 func main() {
@@ -168,7 +169,7 @@ func build(dir, name, pkg string) string {
 	if runtime.GOOS == "windows" {
 		out += ".exe"
 	}
-	cmd := exec.Command("go", "build", "-o", out, pkg)
+	cmd := exec.Command("go", "build", "-ldflags", "-X main.version="+*version, "-o", out, pkg)
 	cmd.Dir = *repoDir
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	must(cmd.Run())
