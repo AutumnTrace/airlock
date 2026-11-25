@@ -156,7 +156,7 @@ func main() {
 					})
 				case "big":
 					n, _ := p.Arguments["n"].(float64)
-					reply(m.ID, text(strings.Repeat("x", int(n))))
+					reply(m.ID, text(prose(int(n))))
 				default:
 					fail(m.ID, -32602, "unknown tool "+p.Name)
 				}
@@ -174,4 +174,15 @@ func main() {
 		fmt.Fprintln(os.Stderr, "fakemcp: stdin closed, bye")
 	}
 	os.Exit(*exitCode)
+}
+
+// prose returns n bytes of ordinary text, so benchmarks see the kind of
+// content a tool result has rather than one repeated byte.
+func prose(n int) string {
+	const s = "The quick brown fox jumps over the lazy dog while the build runs; logs scroll by, tests pass, and a file is read from disk. "
+	var b strings.Builder
+	for b.Len() < n {
+		b.WriteString(s)
+	}
+	return b.String()[:n]
 }
