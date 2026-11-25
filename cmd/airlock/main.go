@@ -26,6 +26,8 @@ const usage = `airlock: a flight recorder and firewall for MCP servers
 
 Usage:
   airlock wrap [flags] -- <server command> [args...]
+  airlock verify [flags] <session.jsonl>...
+  airlock keygen [-o airlock.key]
   airlock version
 
 Run "airlock <command> -h" for the flags of a command.
@@ -43,6 +45,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	switch args[0] {
 	case "wrap":
 		return cmdWrap(args[1:], stdin, stdout, stderr)
+	case "verify":
+		return cmdVerify(args[1:], stdout, stderr)
+	case "keygen":
+		return cmdKeygen(args[1:], stdout, stderr)
 	case "version", "--version", "-v":
 		fmt.Fprintln(stdout, "airlock", buildVersion())
 		return 0
