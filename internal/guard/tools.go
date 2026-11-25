@@ -67,55 +67,77 @@ func (g *Guard) toolsList(m *jsonrpc.Message, req pending) verdict {
 		}
 		seen[t.Name] = true
 		flags := pin.Scan(t, names)
+		high := pin.HasHigh(flags)
 		status, old := g.pins.Check(t)
+		flagsLogged := false
+		hide := "" // non-empty: take the tool out of the list and block calls
 
 		switch {
 		case status == pin.Same:
-			g.accept(t)
-		case g.opt.Repin && status != pin.Same:
+		case g.opt.Repin:
 			g.pins.Pin(t, now)
-			g.accept(t)
 			repinned = append(repinned, t.Name)
-		case status == pin.New:
+		case status == pin.New && !g.pins.FromLockfile():
 			g.pins.Pin(t, now)
-			g.accept(t)
-			if g.pins.FromLockfile() {
-				events = append(events, Event{Type: "new_tool", Tool: t.Name, NewHash: t.Hash, New: t.Def, Action: Warn})
+			firstPins = append(firstPins, t.Name)
+		case status == pin.New:
+			events = append(events, &Event{Type: "new_tool", Tool: t.Name, NewHash: t.Hash, New: t.Def, Flags: flags, Action: g.opt.OnNewTool})
+			flagsLogged = true
+			if g.opt.OnNewTool == Block {
+				hide = "the tool is not in the lockfile (on_new_tool = block)"
+				break
+			}
+			g.pins.Pin(t, now)
+			if g.opt.OnNewTool == Warn {
 				g.opt.Warn(fmt.Sprintf("new tool %q is not in the lockfile; pinned it", t.Name))
-			} else {
-				firstPins = append(firstPins, t.Name)
 			}
 		case status == pin.Changed:
-			ev := Event{Type: "drift", Tool: t.Name, Action: g.opt.OnDrift, OldHash: old.SHA256, NewHash: t.Hash, Old: old.Definition, New: t.Def, Flags: flags}
-			events = append(events, ev)
+			events = append(events, &Event{Type: "drift", Tool: t.Name, Action: g.opt.OnDrift, OldHash: old.SHA256, NewHash: t.Hash, Old: old.Definition, New: t.Def, Flags: flags})
+			flagsLogged = true
 			if g.opt.OnDrift == Block {
-				g.block(t.Name, "the tool's definition changed since it was pinned (hash "+short(old.SHA256)+" -> "+short(t.Hash)+")")
-				filtered = true
-				g.opt.Warn(fmt.Sprintf("tool %q changed since it was pinned; hidden from the client and blocked (review, then run with --repin to accept)", t.Name))
-				continue
+				hide = "the tool's definition changed since it was pinned (hash " + short(old.SHA256) + " -> " + short(t.Hash) + ")"
+				break
 			}
-			g.accept(t)
 			g.opt.Warn(fmt.Sprintf("tool %q changed since it was pinned (on_drift = warn)", t.Name))
 		}
-		if len(flags) > 0 && status != pin.Changed {
-			events = append(events, Event{Type: "suspicious", Tool: t.Name, Flags: flags, Action: Warn})
-			if pin.HasHigh(flags) {
-				g.opt.Warn(fmt.Sprintf("tool %q: %s (%s)", t.Name, flags[0].Rule, flags[0].Detail))
+
+		if len(flags) > 0 {
+			action := "note"
+			if high {
+				action = g.opt.OnSuspicious
+			}
+			if !flagsLogged {
+				events = append(events, &Event{Type: "suspicious", Tool: t.Name, Flags: flags, Action: action})
+			}
+			if high && hide == "" {
+				if action == Block {
+					hide = fmt.Sprintf("the tool's definition trips the %s heuristic (on_suspicious = block)", flags[0].Rule)
+				} else {
+					g.opt.Warn(fmt.Sprintf("tool %q: %s (%s)", t.Name, flags[0].Rule, flags[0].Detail))
+				}
 			}
 		}
+
+		if hide != "" {
+			g.block(t.Name, hide)
+			filtered = true
+			g.opt.Warn(fmt.Sprintf("tool %q hidden from the client and blocked: %s", t.Name, hide))
+			continue
+		}
+		g.accept(t)
 		keep = append(keep, raw)
 	}
 
 	if len(firstPins) > 0 {
 		sort.Strings(firstPins)
-		events = append([]any{Event{Type: "pin", Tools: firstPins}}, events...)
+		events = append([]any{&Event{Type: "pin", Tools: firstPins}}, events...)
 	}
 	if len(repinned) > 0 {
-		events = append(events, Event{Type: "repin", Tools: repinned})
+		events = append(events, &Event{Type: "repin", Tools: repinned})
 	}
 	if _, more := res["nextCursor"]; !more && !req.cursor {
 		if gone := g.missing(seen); len(gone) > 0 {
-			events = append(events, Event{Type: "removed", Tools: gone})
+			events = append(events, &Event{Type: "removed", Tools: gone})
 		}
 	}
 	if err := g.pins.Save(); err != nil {

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 // Kind says what a frame is.
@@ -187,7 +188,7 @@ func idOrNull(id json.RawMessage) json.RawMessage {
 }
 
 // marshal encodes without HTML escaping, so "<" in a tool description stays
-// "<" instead of becoming "<" on its way to the client.
+// "<" instead of becoming "\u003c" on its way to the client.
 func marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -208,3 +209,59 @@ const (
 	CodeMethodNotFound = -32601
 	CodeInvalidParams  = -32602
 )
+
+// DuplicateKey looks for an object anywhere in raw that has the same member
+// twice, comparing names case-insensitively. Parsers disagree about such
+// objects (Go's encoding/json keeps the last value and also matches struct
+// fields regardless of case; other parsers keep the first, or the exact-case
+// one), and that disagreement is how a message can mean one thing to a
+// proxy and another to the server behind it. It returns the repeated name.
+func DuplicateKey(raw []byte) (string, bool) {
+	type level struct {
+		obj     bool
+		wantKey bool
+		keys    map[string]struct{}
+	}
+	var st []*level
+	valueDone := func() {
+		if n := len(st); n > 0 && st[n-1].obj {
+			st[n-1].wantKey = true
+		}
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return "", false
+		}
+		if n := len(st); n > 0 && st[n-1].obj && st[n-1].wantKey {
+			top := st[n-1]
+			if d, ok := tok.(json.Delim); ok && d == '}' {
+				st = st[:n-1]
+				valueDone()
+				continue
+			}
+			k, _ := tok.(string)
+			fk := strings.ToLower(k)
+			if _, dup := top.keys[fk]; dup {
+				return k, true
+			}
+			top.keys[fk] = struct{}{}
+			top.wantKey = false
+			continue
+		}
+		switch tok {
+		case json.Delim('{'):
+			st = append(st, &level{obj: true, wantKey: true, keys: map[string]struct{}{}})
+		case json.Delim('['):
+			st = append(st, &level{})
+		case json.Delim('}'), json.Delim(']'):
+			if len(st) > 0 {
+				st = st[:len(st)-1]
+			}
+			valueDone()
+		default:
+			valueDone()
+		}
+	}
+}

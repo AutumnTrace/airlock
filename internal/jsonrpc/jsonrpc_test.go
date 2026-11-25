@@ -90,3 +90,21 @@ func TestFrameReader(t *testing.T) {
 		t.Fatalf("frames: %d %q", len(got), got[:2])
 	}
 }
+
+func TestDuplicateKey(t *testing.T) {
+	for in, want := range map[string]string{
+		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"a","name":"b"}}`:                "name",
+		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"a","NAME":"b"}}`:                "NAME",
+		`{"method":"tools/list","method":"tools/call"}`:                                                  "method",
+		`{"a":[{"x":1},{"x":2}],"b":{"c":{"d":1,"d":2}}}`:                                                "d",
+		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"a","arguments":{"path":"/x"}}}`: "",
+		`{"a":{"x":1},"b":{"x":1}}`:                                                                      "",
+		`[{"a":1},{"a":1}]`:                                                                              "",
+		`not json`:                                                                                       "",
+	} {
+		got, dup := DuplicateKey([]byte(in))
+		if got != want || dup != (want != "") {
+			t.Errorf("DuplicateKey(%s) = %q, %v; want %q", in, got, dup, want)
+		}
+	}
+}

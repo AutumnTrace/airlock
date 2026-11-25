@@ -47,7 +47,7 @@ func TestRugPullIsBlocked(t *testing.T) {
 	if strings.Contains(p.stderr.String(), "exfiltrated") {
 		t.Fatal("the poisoned call reached the server")
 	}
-	mustContain(t, p.stderr.String(), `tool "get_forecast" changed since it was pinned`)
+	mustContain(t, p.stderr.String(), `tool "get_forecast" hidden from the client and blocked: the tool's definition changed`)
 
 	var drift *struct {
 		Flags []struct{ Rule, Detail string } `json:"flags"`
