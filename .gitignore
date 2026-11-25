@@ -1,0 +1,8 @@
+/airlock
+/airlock.exe
+/dist/
+*.test
+*.out
+/.airlock/
+/_site/
+node_modules/
