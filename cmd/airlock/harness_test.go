@@ -47,9 +47,7 @@ func TestMain(m *testing.M) {
 	}
 	airlockBin = build("airlock", "github.com/AutumnTrace/airlock/cmd/airlock")
 	fakeBin = build("fakemcp", "github.com/AutumnTrace/airlock/internal/fakemcp")
-	if _, err := os.Stat("../../examples/rugpull"); err == nil {
-		rugpullBin = build("rugpull", "github.com/AutumnTrace/airlock/examples/rugpull")
-	}
+	rugpullBin = build("rugpull", "github.com/AutumnTrace/airlock/examples/rugpull")
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)

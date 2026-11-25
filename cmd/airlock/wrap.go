@@ -12,6 +12,7 @@ import (
 
 	"github.com/AutumnTrace/airlock/internal/audit"
 	"github.com/AutumnTrace/airlock/internal/guard"
+	"github.com/AutumnTrace/airlock/internal/pin"
 	"github.com/AutumnTrace/airlock/internal/proxy"
 )
 
@@ -24,6 +25,9 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	signKey := fs.String("sign-key", "", "Ed25519 private key (from airlock keygen) used to sign checkpoints")
 	every := fs.Int("checkpoint-every", 256, "records between signed checkpoints")
 	quiet := fs.Bool("quiet", false, "do not print the log path and chain head on exit")
+	lockPath := fs.String("lock", "", "lockfile for tool pins (default: pins last for this session only)")
+	onDrift := fs.String("on-drift", guard.Warn, "what to do when a tool's definition changes: warn or block")
+	repin := fs.Bool("repin", false, "accept the server's current tool definitions as the new pins")
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "Usage: airlock wrap [flags] -- <server command> [args...]")
 		fs.PrintDefaults()
@@ -36,12 +40,22 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fs.Usage()
 		return 2
 	}
+	warn := func(msg string) { fmt.Fprintln(stderr, "airlock: "+msg) }
 
+	if *onDrift != guard.Warn && *onDrift != guard.Block {
+		warn(fmt.Sprintf("--on-drift must be warn or block, not %q", *onDrift))
+		return 2
+	}
+	pins, err := pin.Load(*lockPath)
+	if err != nil {
+		warn(err.Error())
+		return 2
+	}
 	opts := audit.Options{CheckpointEvery: *every}
 	if *signKey != "" {
 		k, err := audit.LoadPrivateKey(*signKey)
 		if err != nil {
-			fmt.Fprintf(stderr, "airlock: %v\n", err)
+			warn(err.Error())
 			return 2
 		}
 		opts.Key = k
@@ -49,7 +63,7 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	child, err := proxy.Start(argv)
 	if err != nil {
-		fmt.Fprintf(stderr, "airlock: cannot start %s: %v\n", argv[0], err)
+		warn(fmt.Sprintf("cannot start %s: %v", argv[0], err))
 		return 127
 	}
 	stop := child.ForwardSignals()
@@ -67,14 +81,15 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		cwd, _ := os.Getwd()
 		log, err = audit.Create(path, audit.Header{
-			Airlock: buildVersion(),
-			Command: argv,
-			Dir:     cwd,
-			PID:     child.PID(),
+			Airlock:  buildVersion(),
+			Command:  argv,
+			Dir:      cwd,
+			PID:      child.PID(),
+			Lockfile: pins.Path(),
 		}, opts)
 		if err != nil {
 			// A broken log directory must not take the server down with it.
-			fmt.Fprintf(stderr, "airlock: not recording this session: %v\n", err)
+			warn(fmt.Sprintf("not recording this session: %v", err))
 			log = nil
 		}
 	}
@@ -83,6 +98,7 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if log != nil {
 		rec = log
 	}
+	g := guard.New(rec, guard.Options{Pins: pins, OnDrift: *onDrift, Repin: *repin, Warn: warn})
 	err = proxy.Run(proxy.Pipes{
 		ClientIn:  stdin,
 		ClientOut: stdout,
@@ -90,18 +106,18 @@ func cmdWrap(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		ServerOut: child.Stdout,
 		ServerErr: child.Stderr,
 		ErrOut:    stderr,
-	}, guard.New(rec))
+	}, g)
 	code := child.Wait()
 	if err != nil {
-		fmt.Fprintf(stderr, "airlock: %v\n", err)
+		warn(err.Error())
 	}
 	if log != nil {
 		head, lerr := log.Close(code)
 		switch {
 		case lerr != nil:
-			fmt.Fprintf(stderr, "airlock: session log %s is incomplete: %v\n", log.Path, lerr)
+			warn(fmt.Sprintf("session log %s is incomplete: %v", log.Path, lerr))
 		case !*quiet:
-			fmt.Fprintf(stderr, "airlock: session log %s (head %s)\n", log.Path, head[:16])
+			warn(fmt.Sprintf("session log %s (head %s)", log.Path, head[:16]))
 		}
 	}
 	return code
