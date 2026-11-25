@@ -273,3 +273,14 @@ hints = ["TKT-"]
 		t.Fatal("hinted custom pattern should skip clean frames without a regex run")
 	}
 }
+
+// The bug from the devlog: in raw JSON, the n of a \n escape sits right
+// before the key and defeats the pattern's \b.
+func TestKeyAfterNewlineEscape(t *testing.T) {
+	r, _ := NewRedactor(true, nil)
+	b, _ := json.Marshal(map[string]string{"text": "AWS=x\nAKIAIOSFODNN7EXAMPLE\n"})
+	out, counts, _ := r.JSON(b)
+	if counts["aws-access-key-id"] != 1 || strings.Contains(string(out), "AKIAIOSFODNN7EXAMPLE") {
+		t.Fatalf("%s %v", out, counts)
+	}
+}

@@ -1,0 +1,77 @@
+goos: windows
+goarch: amd64
+pkg: github.com/AutumnTrace/airlock/cmd/airlock
+cpu: AMD Ryzen 7 9800X3D 8-Core Processor           
+BenchmarkRoundTrip/small/direct-16         	  253388	     13824 ns/op
+BenchmarkRoundTrip/small/direct-16         	  267142	     13830 ns/op
+BenchmarkRoundTrip/small/direct-16         	  250689	     14238 ns/op
+BenchmarkRoundTrip/small/direct-16         	  246004	     14665 ns/op
+BenchmarkRoundTrip/small/direct-16         	  241716	     14479 ns/op
+BenchmarkRoundTrip/small/airlock-nolog-16  	  101139	     34408 ns/op
+BenchmarkRoundTrip/small/airlock-nolog-16  	  101330	     34264 ns/op
+BenchmarkRoundTrip/small/airlock-nolog-16  	  103886	     34644 ns/op
+BenchmarkRoundTrip/small/airlock-nolog-16  	  101085	     35026 ns/op
+BenchmarkRoundTrip/small/airlock-nolog-16  	  103567	     34640 ns/op
+BenchmarkRoundTrip/small/airlock-log-16    	   77521	     46496 ns/op
+BenchmarkRoundTrip/small/airlock-log-16    	   79682	     46070 ns/op
+BenchmarkRoundTrip/small/airlock-log-16    	   77096	     46447 ns/op
+BenchmarkRoundTrip/small/airlock-log-16    	   78057	     46810 ns/op
+BenchmarkRoundTrip/small/airlock-log-16    	   78622	     45847 ns/op
+BenchmarkRoundTrip/small/airlock-log-signed-16         	   77890	     44924 ns/op
+BenchmarkRoundTrip/small/airlock-log-signed-16         	   84226	     44226 ns/op
+BenchmarkRoundTrip/small/airlock-log-signed-16         	   80587	     44143 ns/op
+BenchmarkRoundTrip/small/airlock-log-signed-16         	   79866	     44479 ns/op
+BenchmarkRoundTrip/small/airlock-log-signed-16         	   77451	     44924 ns/op
+BenchmarkRoundTrip/small/airlock-policy-log-16         	   63150	     56835 ns/op
+BenchmarkRoundTrip/small/airlock-policy-log-16         	   63620	     57690 ns/op
+BenchmarkRoundTrip/small/airlock-policy-log-16         	   64275	     59411 ns/op
+BenchmarkRoundTrip/small/airlock-policy-log-16         	   58042	     61036 ns/op
+BenchmarkRoundTrip/small/airlock-policy-log-16         	   60873	     59965 ns/op
+BenchmarkRoundTrip/64KiB-result/direct-16              	   34538	    107801 ns/op
+BenchmarkRoundTrip/64KiB-result/direct-16              	   32845	    109975 ns/op
+BenchmarkRoundTrip/64KiB-result/direct-16              	   31984	    116598 ns/op
+BenchmarkRoundTrip/64KiB-result/direct-16              	   32256	    114134 ns/op
+BenchmarkRoundTrip/64KiB-result/direct-16              	   33265	    113899 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-nolog-16       	   18361	    196586 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-nolog-16       	   18273	    196893 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-nolog-16       	   18190	    197975 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-nolog-16       	   18538	    196831 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-nolog-16       	   18574	    195432 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-16         	   13341	    270449 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-16         	   13412	    267905 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-16         	   13842	    257189 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-16         	   13914	    258242 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-16         	   14415	    250458 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-signed-16  	   14000	    258238 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-signed-16  	   13586	    264335 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-signed-16  	   12634	    292590 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-signed-16  	   12192	    297891 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-log-signed-16  	   10000	    314137 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-policy-log-16  	   11554	    313682 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-policy-log-16  	   10000	    306660 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-policy-log-16  	   10000	    315381 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-policy-log-16  	   10000	    308121 ns/op
+BenchmarkRoundTrip/64KiB-result/airlock-policy-log-16  	   10000	    310327 ns/op
+PASS
+ok  	github.com/AutumnTrace/airlock/cmd/airlock	184.510s
+goos: windows
+goarch: amd64
+pkg: github.com/AutumnTrace/airlock/internal/guard
+cpu: AMD Ryzen 7 9800X3D 8-Core Processor           
+BenchmarkGuard/record-only-16         	 1000000	      3526 ns/op	    1380 B/op	      25 allocs/op
+BenchmarkGuard/record-only-16         	 1000000	      3859 ns/op	    1380 B/op	      25 allocs/op
+BenchmarkGuard/record-only-16         	 1000000	      4107 ns/op	    1380 B/op	      25 allocs/op
+BenchmarkGuard/record-only-16         	  936586	      4071 ns/op	    1380 B/op	      25 allocs/op
+BenchmarkGuard/record-only-16         	  846711	      3890 ns/op	    1380 B/op	      25 allocs/op
+BenchmarkGuard/policy-no-log-16       	  294656	     10674 ns/op	    5770 B/op	     101 allocs/op
+BenchmarkGuard/policy-no-log-16       	  448153	     10030 ns/op	    5770 B/op	     101 allocs/op
+BenchmarkGuard/policy-no-log-16       	  383312	     10328 ns/op	    5770 B/op	     101 allocs/op
+BenchmarkGuard/policy-no-log-16       	  361867	     10445 ns/op	    5770 B/op	     101 allocs/op
+BenchmarkGuard/policy-no-log-16       	  379750	     10228 ns/op	    5771 B/op	     101 allocs/op
+BenchmarkGuard/policy-and-log-16      	  281700	     12739 ns/op	    6307 B/op	     114 allocs/op
+BenchmarkGuard/policy-and-log-16      	  282859	     12036 ns/op	    6308 B/op	     114 allocs/op
+BenchmarkGuard/policy-and-log-16      	  357787	     12163 ns/op	    6308 B/op	     114 allocs/op
+BenchmarkGuard/policy-and-log-16      	  296635	     12140 ns/op	    6309 B/op	     114 allocs/op
+BenchmarkGuard/policy-and-log-16      	  301316	     11748 ns/op	    6309 B/op	     114 allocs/op
+PASS
+ok  	github.com/AutumnTrace/airlock/internal/guard	56.431s
