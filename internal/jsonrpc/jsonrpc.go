@@ -52,6 +52,10 @@ type Message struct {
 	// 2025-06-18 but older peers may still send them.
 	Elems []*Message
 
+	// JSON is true when the frame is syntactically valid JSON, whatever its
+	// shape.
+	JSON bool
+
 	// Err is set for Invalid frames and says why.
 	Err error
 }
@@ -86,6 +90,7 @@ func Parse(raw []byte) *Message {
 			m.Err = err
 			return m
 		}
+		m.JSON = true
 		m.Kind = Batch
 		for _, e := range elems {
 			m.Elems = append(m.Elems, Parse(e))
@@ -94,13 +99,16 @@ func Parse(raw []byte) *Message {
 	}
 	if trimmed[0] != '{' {
 		m.Err = errNotObject
+		m.JSON = json.Valid(trimmed)
 		return m
 	}
 	var w wire
 	if err := json.Unmarshal(trimmed, &w); err != nil {
+		m.JSON = json.Valid(trimmed) // valid JSON with a wrongly typed member
 		m.Err = err
 		return m
 	}
+	m.JSON = true
 	if w.JSONRPC != "2.0" {
 		m.Err = errVersion
 		return m
