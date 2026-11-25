@@ -1,0 +1,54 @@
+# airlock policy for @modelcontextprotocol/server-filesystem.
+#
+#   airlock wrap --policy filesystem.toml -- \
+#     npx -y @modelcontextprotocol/server-filesystem /home/me/projects/site
+#
+# Rules are read top to bottom and the first rule whose tools match decides.
+# Paths are compared after cleaning ("/a/../b" is "/b") and by whole path
+# segments ("/home/me/projects/site" does not cover ".../site-backup").
+
+default = "deny"               # anything not allowed below is refused
+
+[pinning]
+lockfile = "filesystem.lock.json"
+on_drift = "block"             # a tool whose definition changes is hidden and refused
+on_new_tool = "warn"
+on_suspicious = "block"
+
+[schema]
+validate = true                # check arguments against each tool's inputSchema
+
+# Reading and listing: anywhere in the project.
+[[rule]]
+tools = ["read_text_file", "read_media_file", "read_multiple_files", "read_file",
+         "list_directory", "list_directory_with_sizes", "directory_tree",
+         "search_files", "get_file_info"]
+action = "allow"
+args.path.prefix = ["/home/me/projects/site"]
+args.paths.prefix = ["/home/me/projects/site"]
+
+[[rule]]
+tools = ["list_allowed_directories"]
+action = "allow"
+
+# Writing: only under src/ and docs/, never a dotenv file, at most 20 a minute.
+[[rule]]
+tools = ["write_file", "edit_file", "append_file", "create_directory"]
+action = "allow"
+rate = "20/min"
+  [rule.args.path]
+  prefix = ["/home/me/projects/site/src", "/home/me/projects/site/docs"]
+  not_regex = '(^|[/\\])\.env'
+
+# Moving and copying files is for a human to do.
+[[rule]]
+tools = ["move_file", "copy_file"]
+action = "deny"
+reason = "ask the user to move or copy files"
+
+[redact]
+builtin = true                 # AWS, GitHub, Anthropic, OpenAI, Slack, Stripe, Google keys, JWTs, PEM private keys
+
+[[redact.pattern]]
+name = "internal-hostname"
+regex = '\b[a-z0-9-]+\.internal\.example\.com\b'

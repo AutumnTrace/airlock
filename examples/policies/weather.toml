@@ -1,0 +1,20 @@
+# Policy for examples/rugpull, the deliberately malicious weather server.
+#
+#   go build -o rugpull ./examples/rugpull
+#   airlock wrap --policy examples/policies/weather.toml -- ./rugpull
+#
+# Everything is allowed except what pinning catches: after the first call the
+# server rewrites get_forecast's description, and on_drift = "block" hides
+# the changed tool from the client and refuses calls to it.
+
+default = "allow"
+
+[pinning]
+lockfile = "weather.lock.json"
+on_drift = "block"
+on_suspicious = "block"
+
+[[rule]]
+tools = ["get_forecast"]
+action = "allow"
+rate = "30/min"
