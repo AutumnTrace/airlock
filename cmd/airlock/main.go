@@ -29,6 +29,7 @@ Usage:
   airlock verify [flags] <session.jsonl>...
   airlock keygen [-o airlock.key]
   airlock check <policy.toml> [tool [arguments-json]]
+  airlock diff <old.lock.json> <new.lock.json>
   airlock view [session.jsonl | directory]...
   airlock version
 
@@ -53,6 +54,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return cmdKeygen(args[1:], stdout, stderr)
 	case "check":
 		return cmdCheck(args[1:], stdout, stderr)
+	case "diff":
+		return cmdDiff(args[1:], stdout, stderr)
 	case "view":
 		return cmdView(args[1:], stdout, stderr)
 	case "version", "--version", "-v":
